@@ -376,14 +376,64 @@ class ScannerApp(QMainWindow):
                 sane.exit()
 
             elif platform.system() == 'Windows':
-                import win32com.client
-                wia = win32com.client.Dispatch("WIA.CommonDialog")
-                image = wia.ShowAcquireImage()
-                if image:
-                    path = os.path.join(os.getcwd(), "scanned_image.jpg")
-                    image.SaveFile(path)
-                    pixmap = QPixmap(path)
-                    self.add_thumbnail(pixmap)
+                try:
+                    from twain import SourceManager
+                    
+                    # Initialize TWAIN
+                    sm = SourceManager(0)
+                    scanners = sm.source_list
+                    if not scanners:
+                        raise Exception("No TWAIN-compatible scanners found.\n"
+                                    "1. Check scanner is powered on\n"
+                                    "2. Install manufacturer's TWAIN driver\n"
+                                    "3. Try a different USB port")
+
+                    # For multiple scanners, let user select
+                    if len(scanners) > 1:
+                        scanner_idx = self._show_scanner_dialog(scanners)  # Implement this
+                    else:
+                        scanner_idx = 0
+
+                    scanner = sm.open_source(scanner_idx)
+                    scanner.request_acquire(0, True)
+                    
+                    # Set scan parameters (optional)
+                    try:
+                        scanner.set_capability(
+                            twain.ICAP_XRESOLUTION, 
+                            twain.TWTY_FIX32, 
+                            300  # 300 DPI
+                        )
+                    except:
+                        pass  # Skip if scanner doesn't support this
+
+                    image = scanner.xfer_image_native()
+                    if image:
+                        temp_file = "scan_temp.jpg"
+                        image.save(temp_file)
+                        pixmap = QPixmap(temp_file)
+                        if not pixmap.isNull():
+                            self.add_thumbnail(pixmap)
+                        else:
+                            raise Exception("Failed to load scanned image")
+                    else:
+                        raise Exception("Scanning was cancelled or failed")
+                        
+                except Exception as e:
+                    QMessageBox.critical(
+                        self, 
+                        "Scan Error", 
+                        f"TWAIN Error:\n{str(e)}\n\n"
+                        "Troubleshooting:\n"
+                        "1. Reinstall scanner drivers\n"
+                        "2. Try another USB port\n"
+                        "3. Check manufacturer's website for TWAIN updates"
+                    )
+                finally:
+                    if 'scanner' in locals():
+                        scanner.destroy()
+                    if 'sm' in locals():
+                        sm.destroy()
 
             else:
                 QMessageBox.critical(self, "Unsupported OS", "Scanning is only supported on Windows and Linux.")

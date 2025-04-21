@@ -1,4 +1,5 @@
 PyQt5==5.15.9
-pywin32==306; sys_platform == 'win32'
+pywin32==306
 pillow==10.0.0
-sane==2.8.1; sys_platform == 'linux'
+pylibtwain==1.0.0  # New for TWAIN support
+python-sane==2.8.1; sys_platform == 'linux'

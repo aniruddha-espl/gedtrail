@@ -10,8 +10,7 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Set up Python 3.9
         uses: actions/setup-python@v4
@@ -27,19 +26,11 @@ jobs:
 
       - name: Install Windows dependencies
         run: |
-          # Install Visual C++ Redistributable
           choco install vcredist2015 -y
-          # Install WIA for scanning
-          $WIA = "WIA.CommonDialog"
-          $exists = [bool]([Type]::GetTypeFromProgID($WIA))
-          if (-not $exists) {
-              Write-Host "WIA is not available"
-          }
 
-      - name: Run PyInstaller
+      - name: Build with PyInstaller
         run: |
           pyinstaller --onefile --windowed --icon=scanner_icon.ico --name DocumentScanner gedtrail.py
-          # Verify the executable was created
           dir dist
 
       - name: Upload artifact

@@ -1,0 +1,4 @@
+PyQt5==5.15.9
+pywin32==306; sys_platform == 'win32'
+pillow==10.0.0
+sane==2.8.1; sys_platform == 'linux'
